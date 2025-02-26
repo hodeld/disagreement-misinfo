@@ -1,7 +1,6 @@
 from os import path
 from ocr2text_logic import convert_recursive
 
-
 DATASET_PATH = path.join(path.dirname(path.abspath(__file__)), 'datasets')
 INPUT_P = path.join(DATASET_PATH, 'amct_pdf_files')
 OUT_P = path.join(DATASET_PATH, 'amct_text_files')

@@ -2,11 +2,9 @@ import os
 import shutil
 import errno
 import subprocess
-import tempfile
 from tempfile import mkdtemp
 from PIL import Image
 import pytesseract
-#from pdf2image import convert_from_path, convert_from_bytes
 import sys
 
 
@@ -24,39 +22,39 @@ def update_progress(progress):
     if progress >= 1:
         progress = 1
         status = "\r\n"
-    block = int(round(barLength*progress))
+    block = int(round(barLength * progress))
     text = "\rPercent: [{0}] {1}% {2}".format(
-        "#"*block + "-"*(barLength-block), progress*100, status)
+        "#" * block + "-" * (barLength - block), progress * 100, status)
     sys.stdout.write(text)
     sys.stdout.flush()
 
 
 def run(args):
-        # run a subprocess and put the stdout and stderr on the pipe object
-        try:
-            pipe = subprocess.Popen(
-                args,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            )
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                # File not found.
-                # This is equivalent to getting exitcode 127 from sh
-                raise Exception.ShellError(
-                    ' '.join(args), 127, '', '',
-                )
-
-        # pipe.wait() ends up hanging on large files. using
-        # pipe.communicate appears to avoid this issue
-        stdout, stderr = pipe.communicate()
-
-        # if pipe is busted, raise an error (unlike Fabric)
-        if pipe.returncode != 0:
+    # run a subprocess and put the stdout and stderr on the pipe object
+    try:
+        pipe = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            # File not found.
+            # This is equivalent to getting exitcode 127 from sh
             raise Exception.ShellError(
-                ' '.join(args), pipe.returncode, stdout, stderr,
+                ' '.join(args), 127, '', '',
             )
 
-        return stdout, stderr
+    # pipe.wait() ends up hanging on large files. using
+    # pipe.communicate appears to avoid this issue
+    stdout, stderr = pipe.communicate()
+
+    # if pipe is busted, raise an error (unlike Fabric)
+    if pipe.returncode != 0:
+        raise Exception.ShellError(
+            ' '.join(args), pipe.returncode, stdout, stderr,
+        )
+
+    return stdout, stderr
 
 
 def extract_tesseract(filename, temp_fp):
