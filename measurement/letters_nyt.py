@@ -11,6 +11,8 @@ from measurement.helpers import df_disa_years, plot_editor_letters, plot_disagre
 
 
 def analyze_files_proquest():
+    '''Function to analyze the proquest letters.
+    This function need to be run on ProQuest server.'''
     fp_pq = PQ_LETTERS_PATH
     source = PQ_TEXT_FILES_PATH
     col_txt = 'text'
