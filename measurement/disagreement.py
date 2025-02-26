@@ -1,3 +1,9 @@
+from measurement.helpers import preprocessing, tokenize_pos_tagging
+from nltk.corpus import sentiwordnet as swn
+from nltk.corpus import wordnet as wn
+import pandas as pd
+
+
 COL_NR_NEG_PROP = 'prop_nr_neg'
 COL_SWN_COUNT = 'swn_c'
 COL_NR_NEG = 'nr_neg'
@@ -7,7 +13,7 @@ SWN_COLUMNS = [COL_NR_POS, COL_NR_NEG, COL_SWN_COUNT]
 
 
 def sentiwordnet_extract(df, orig_col_name):
-    # from https://www.kaggle.com/code/yommnamohamed/sentiment-analysis-using-sentiwordnet/notebook
+    '''inspired by https://www.kaggle.com/code/yommnamohamed/sentiment-analysis-using-sentiwordnet/notebook'''
 
     preprocessing(df, orig_col_name)
     postagging, tok_lens = tokenize_pos_tagging(df)
@@ -66,7 +72,7 @@ def sentiwordnet_extract(df, orig_col_name):
                 count += 1  # count words found
         if k % 10000 == 0:
             print(f'{k} scored')
-        senti_score.append((pos, neg, count, tok_len))
+        senti_score.append((pos, neg, count))
         reset_scores()
     print('mean positives', sum(positives) / len(positives))
     df_scores = pd.DataFrame(senti_score, columns=columns, index=df.index)

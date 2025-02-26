@@ -6,11 +6,12 @@ import os
 
 from measurement.disagreement import swn_extract_score, neg_sentiment_swn, COL_NR_NEG_PROP, COL_NR_NEG, COL_SWN_COUNT
 from measurement.helpers import df_disa_years, plot_editor_letters, plot_disagreement_single_year, getxmlcontent, \
-    get_letter_files, OUTPUT_PATH, PQ_PATH, BOOK_PATH, AMCT_TEXT_FILES_PATH, PQ_TEXT_FILES_PATH, merge_pdf_tdm
+    get_letter_files, OUTPUT_PATH, PQ_LETTERS_PATH, BOOK_LETTERS_PATH, AMCT_TEXT_FILES_PATH, PQ_TEXT_FILES_PATH, merge_pdf_tdm, \
+    get_yearly_data_book
 
 
 def analyze_files_proquest():
-    fp_pq = PQ_PATH
+    fp_pq = PQ_LETTERS_PATH
     source = PQ_TEXT_FILES_PATH
     col_txt = 'text'
     names_a, dirs_a = get_letter_files(source, '.xml')
@@ -71,11 +72,10 @@ def analyze_files_book():
         return txt
 
     source = AMCT_TEXT_FILES_PATH
-    fp_csv = BOOK_PATH
+    fp_csv = BOOK_LETTERS_PATH
     fp_para = os.path.join(OUTPUT_PATH, f'single_letters.parquet')
     fp_para_temp = os.path.join(OUTPUT_PATH, f'single_letters_temp.parquet')
 
-    cols_vals_adding_rows = [COL_NR_NEG, COL_SWN_COUNT]  # todo
     col_name = 'name'
     col_txt = 'text'
 
@@ -109,19 +109,18 @@ def analyze_files_book():
 
         dfn = df.groupby(col_name).sum(numeric_only=True)
         rows.append(dfn)
+    if len(rows) > 0:
+        df = pd.concat(rows, axis=0)
+        df = pd.concat([df, df_orig], axis=0)
 
-    df = pd.DataFrame(rows, columns=cols_vals_adding_rows, index=new_names)
-    df = pd.concat([df, df_orig], axis=0)
-
-    df_para.to_parquet(fp_para)
-    os.remove(fp_para_temp)
-    df.to_csv(fp_csv)
+        df_para.to_parquet(fp_para)
+        os.remove(fp_para_temp)
+        df.to_csv(fp_csv)
 
 
 def analyze():
-
     # load data
-    df = merge_pdf_tdm()
+    df = merge_pdf_tdm([COL_NR_NEG, COL_SWN_COUNT])
     dfy = get_yearly_data_book()
 
     neg_sentiment_swn(df)
@@ -145,14 +144,13 @@ def analyze():
     dfi = df_disa_years(df, 1950, 2007)
     print('Corr Book, Neg Sentiment', 1950, 2007,
           spearmanr(dfi[col_neg], dfi[col_belief_ct]))
-    plot_editor_letters(dfi, cols=cols, names=names, subtitle=None, do_normalize=True)
+    plot_editor_letters(dfi, cols=cols, names=names, do_normalize=True)
 
     dfi = df_disa_years(df, 1950, 2022)
     plot_disagreement_single_year(dfi, col_neg, do_normalize=True)
-    print('Total letters 1950 - 2022', dfi['Total Letters'].sum())
 
 
 if __name__ == '__main__':
-    analyze_files_book()
+    #analyze_files_book()
     #analyze_files_proquest()
-    #analyze()
+    analyze()

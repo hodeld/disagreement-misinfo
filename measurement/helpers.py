@@ -7,16 +7,17 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 import nltk
-import matplotlib as plt
+from matplotlib import pyplot as plt
 import os
 
-
+# Define paths
 DATASETS_PATH = os.path.abspath('../datasets/')
 OUTPUT_PATH = os.path.abspath('../data_output/')
-PQ_PATH = os.path.join(OUTPUT_PATH, 'proquest_letters.p')
-BOOK_PATH = os.path.join(OUTPUT_PATH, 'pdf_letters.p')
+PQ_LETTERS_PATH = os.path.join(OUTPUT_PATH, 'proquest_letters.csv')
+BOOK_LETTERS_PATH = os.path.join(OUTPUT_PATH, 'book_letters.csv')
 AMCT_TEXT_FILES_PATH = os.path.join(DATASETS_PATH, 'amct_text_files')
 PQ_TEXT_FILES_PATH = os.path.join(DATASETS_PATH, 'pq_text_files')
+BOOK_DATA_PATH = os.path.join(DATASETS_PATH, 'yearly_data_from_book.csv')
 
 
 COL_POS_TAG = 'pos_tags'
@@ -32,7 +33,7 @@ def df_disa_years(df, y1_int, y2_int):
     return dfi
 
 
-def plot_editor_letters(df, cols, names, second_axis=1, do_normalize=False, subtitle=None, title='Engagement in CT & Negative Sentiment'):
+def plot_editor_letters(df, cols, names, second_axis=1, do_normalize=False):
     plt.rcParams.update({'font.size': 14})
     fig, ax = plt.subplots(1, 1, figsize=(11, 8))  # x, y
 
@@ -97,28 +98,25 @@ def get_letter_files(source, file_ext='.txt'):
     return names, dirs
 
 
-def merge_pdf_tdm():
-    fp_csv = BOOK_PATH
+def merge_pdf_tdm(cols_vals):
+    fp_csv = BOOK_LETTERS_PATH
     df = pd.read_csv(fp_csv, index_col=0)
 
     # add missing rows
     new_index = pd.Series(range(2023 + 1 - 1870)) + 1870
     df = df.reindex(new_index.values)
-
     df.index.name = 'year'
     df.index = pd.to_datetime(df.index, format='%Y')
 
-    files_tdm = [FNAME_TDM_SWN_19thc, FNAME_TDM_SWN_08_23]
-    df_td = concat_tdm_to_df(files_tdm)
+    df_td = pd.read_csv(PQ_LETTERS_PATH, header=0, index_col=0)
+    df_td = aggregate_years(df_td, cols_vals)
 
-    df_td = aggregate_years(df_td, cols_sum=[COL_NR_NEG, COL_SWN_COUNT])
     sfx_tdm, sfx_pdf = '_tdm', '_pdf'
     suffixes = (sfx_pdf, sfx_tdm)
     df = df.merge(df_td, on='year', how='left', suffixes=suffixes)
 
     for col in cols_vals:
         df[col] = df[col + sfx_pdf].fillna(df[col + sfx_tdm])
-        # df[col] = df[col + sfx_tdm]
     return df
 
 
@@ -300,5 +298,55 @@ def tokenize_pos_tagging(df, redo=False):
 
     return postagging, tok_lens
 
+def get_yearly_data_book():
+    fp_csv = BOOK_DATA_PATH
+    dfy = pd.read_csv(fp_csv, index_col=0)
+    dfy.index = dfy.index.astype(int)
+    return dfy
+
+def aggregate_years(df, col_vals, time_period='year', col_count='count'):
+    agg_dfs = []
+    col_year, col_m = year_month_from_string(df, col_date='date')
+    if time_period == 'year':
+        col, fm = col_year, '%Y'
+    else:
+        col, fm = col_m, '%Y-%m'
+    cols = [col] + col_vals
+    df = df[cols]
+    df_count = df.copy()
+    df_count[col_count] = df_count[col_year]
+    df_count = df_count.groupby(col).count()
+    df_count = df_count[[col_count]]
+    agg_dfs.append(df_count)
 
 
+    if time_period == 'year':
+        df_sum = df.groupby(col).sum(numeric_only=True)
+        df_sum = df_sum[col_vals]
+        agg_dfs.append(df_sum)
+    else:
+        df_mean = df.groupby(col).mean(numeric_only=True)
+        df_mean = df_mean[col_vals]
+        subtitle = 'mean'
+        df_mean.columns = [c + '_' + subtitle for c in df_mean.columns]
+        agg_dfs.append(df_mean)
+
+    df_agg = pd.concat(agg_dfs, axis=1)
+    df_agg.index = pd.to_datetime(df_agg.index, format=fm)
+    return df_agg
+
+
+def year_month_from_string(df, col_date='date'):
+    def calc_year(row):
+        y = int(row[col_date][:4])
+        return y
+
+    def calc_month(row):
+        y = row[col_date][:7]
+        return y
+
+    col_year = 'year'
+    df[col_year] = df.apply(lambda x: calc_year(x), axis=1)
+    col_m = 'year-month'
+    df[col_m] = df.apply(lambda x: calc_month(x), axis=1)
+    return col_year, col_m
