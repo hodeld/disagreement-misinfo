@@ -62,7 +62,8 @@ def analyze_files_proquest():
         if len(rows) > 0:
             df_all = pd.concat(rows, axis=0)
             df_orig = pd.concat([df_orig, df_all])
-            df_orig.to_pickle(fp_pq)
+            compression_d = dict(method='zip')
+            df_orig.to_csv(fp_pq, compression=compression_d)
         print('df_orig.shape', df_orig.shape)
 
 

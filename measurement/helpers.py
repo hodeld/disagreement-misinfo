@@ -13,7 +13,7 @@ import os
 # Define paths
 DATASETS_PATH = os.path.abspath('../datasets/')
 OUTPUT_PATH = os.path.abspath('../data_output/')
-PQ_LETTERS_PATH = os.path.join(OUTPUT_PATH, 'proquest_letters.csv')
+PQ_LETTERS_PATH = os.path.join(OUTPUT_PATH, 'proquest_letters.csv.zip')
 BOOK_LETTERS_PATH = os.path.join(OUTPUT_PATH, 'book_letters.csv')
 AMCT_TEXT_FILES_PATH = os.path.join(DATASETS_PATH, 'amct_text_files')
 PQ_TEXT_FILES_PATH = os.path.join(DATASETS_PATH, 'pq_text_files')
