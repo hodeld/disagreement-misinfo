@@ -1,12 +1,12 @@
 import pandas as pd
 from scipy.stats import spearmanr
 
-
 import os
 
 from measurement.disagreement import swn_extract_score, neg_sentiment_swn, COL_NR_NEG_PROP, COL_NR_NEG, COL_SWN_COUNT
 from measurement.helpers import df_disa_years, plot_editor_letters, plot_disagreement_single_year, getxmlcontent, \
-    get_letter_files, OUTPUT_PATH, PQ_LETTERS_PATH, BOOK_LETTERS_PATH, AMCT_TEXT_FILES_PATH, PQ_TEXT_FILES_PATH, merge_pdf_tdm, \
+    get_letter_files, OUTPUT_PATH, PQ_LETTERS_PATH, BOOK_LETTERS_PATH, AMCT_TEXT_FILES_PATH, PQ_TEXT_FILES_PATH, \
+    merge_pdf_tdm, \
     get_yearly_data_book
 
 
@@ -64,6 +64,7 @@ def analyze_files_proquest():
             df_orig = pd.concat([df_orig, df_all])
             df_orig.to_pickle(fp_pq)
         print('df_orig.shape', df_orig.shape)
+
 
 def analyze_files_book():
     def get_txt(fp):
@@ -151,6 +152,6 @@ def analyze():
 
 
 if __name__ == '__main__':
-    #analyze_files_book()
-    #analyze_files_proquest()
+    # analyze_files_book()
+    # analyze_files_proquest()
     analyze()

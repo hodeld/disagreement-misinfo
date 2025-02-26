@@ -3,7 +3,6 @@ from nltk.corpus import sentiwordnet as swn
 from nltk.corpus import wordnet as wn
 import pandas as pd
 
-
 COL_NR_NEG_PROP = 'prop_nr_neg'
 COL_SWN_COUNT = 'swn_c'
 COL_NR_NEG = 'nr_neg'
@@ -17,6 +16,7 @@ def sentiwordnet_extract(df, orig_col_name):
 
     preprocessing(df, orig_col_name)
     postagging, tok_lens = tokenize_pos_tagging(df)
+
     def penn_to_wn(tag):
         if tag.startswith('J'):
             return wn.ADJ
@@ -48,13 +48,14 @@ def sentiwordnet_extract(df, orig_col_name):
         swn_synset = swn.senti_synset(synset.name())
 
         return [synset.name(), swn_synset.pos_score(), swn_synset.neg_score(), swn_synset.obj_score(), word]
+
     def reset_scores():
         nonlocal pos, neg, count
         pos = neg = count = 0
         return pos, neg, count
 
     senti_score = []
-    pos, neg,  count = reset_scores()
+    pos, neg, count = reset_scores()
     print('start senti scores')
     negatives, positives = [], []
     columns = SWN_COLUMNS
@@ -68,7 +69,7 @@ def sentiwordnet_extract(df, orig_col_name):
                 negatives.append(negi)
                 positives.append(posi)
                 pos += posi  # positive score is stored at 2nd position
-                neg += negi   # negative score is stored at 3rd position
+                neg += negi  # negative score is stored at 3rd position
                 count += 1  # count words found
         if k % 10000 == 0:
             print(f'{k} scored')

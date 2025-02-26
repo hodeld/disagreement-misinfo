@@ -19,12 +19,10 @@ AMCT_TEXT_FILES_PATH = os.path.join(DATASETS_PATH, 'amct_text_files')
 PQ_TEXT_FILES_PATH = os.path.join(DATASETS_PATH, 'pq_text_files')
 BOOK_DATA_PATH = os.path.join(DATASETS_PATH, 'yearly_data_from_book.csv')
 
-
 COL_POS_TAG = 'pos_tags'
 COL_LEMMA = 'after_lemmatization'
 REMOVE_SPECIALCHR = True
 REMOVE_STOPWORDS = True
-
 
 
 def df_disa_years(df, y1_int, y2_int):
@@ -77,7 +75,7 @@ def plot_disagreement_single_year(df, col, do_normalize=True):
     plt.setp(ax.get_xticklabels(), rotation=30, ha="right", rotation_mode="anchor")
     ax.set_xlabel('Year', fontsize=16)
 
-    fig.tight_layout(h_pad=7.0,)
+    fig.tight_layout(h_pad=7.0, )
     plt.show()
 
 
@@ -90,7 +88,7 @@ def get_letter_files(source, file_ext='.txt'):
     for dirpath, dirnames, files in os.walk(source):
         for i, file in enumerate(files):
             filename, file_extension = os.path.splitext(file)
-            if 'dragged' in filename or (file_extension.lower() != file_ext) :
+            if 'dragged' in filename or (file_extension.lower() != file_ext):
                 continue
             names.append(filename)
             source_path = os.path.join(dirpath, file)
@@ -173,7 +171,6 @@ def getxmlcontent(fpath, strip_html=True):
     return goid, title, date, text, pubtitle
 
 
-
 def preprocessing(df, orig_col_name, redo=False,
                   rm_spechr=REMOVE_SPECIALCHR, rm_stopwords=REMOVE_STOPWORDS,
                   ):
@@ -198,6 +195,7 @@ def preprocessing(df, orig_col_name, redo=False,
 
     # Function to tokenize and remove the stopwords
     stop_words = set(stopwords.words('english'))
+
     def rem_stopwords_tokenize(data, name):
 
         def getting(sen):
@@ -238,6 +236,7 @@ def preprocessing(df, orig_col_name, redo=False,
         data[name] = data[name].apply(lambda x: ' '.join([i + ' ' for i in x]))
         # Removing double spaces if created
         data[name] = data[name].apply(lambda x: re.sub(r'\s+', ' ', x, flags=re.I))
+
     col_name_after = COL_LEMMA
     if redo or col_name_after not in df.columns:
         col_name = orig_col_name + '_processed'
@@ -272,7 +271,7 @@ def tokenize_pos_tagging(df, redo=False):
     col_tok_lens = 'token_lens'
     for col in (col_postags, col_tok_lens):
         if redo or col not in df.columns:
-            df[col] = None # create columns
+            df[col] = None  # create columns
 
     # return df where one of columns is None
     df_pos = df[(df[col_postags].isna() | df[col_tok_lens].isna())]
@@ -298,11 +297,13 @@ def tokenize_pos_tagging(df, redo=False):
 
     return postagging, tok_lens
 
+
 def get_yearly_data_book():
     fp_csv = BOOK_DATA_PATH
     dfy = pd.read_csv(fp_csv, index_col=0)
     dfy.index = dfy.index.astype(int)
     return dfy
+
 
 def aggregate_years(df, col_vals, time_period='year', col_count='count'):
     agg_dfs = []
@@ -318,7 +319,6 @@ def aggregate_years(df, col_vals, time_period='year', col_count='count'):
     df_count = df_count.groupby(col).count()
     df_count = df_count[[col_count]]
     agg_dfs.append(df_count)
-
 
     if time_period == 'year':
         df_sum = df.groupby(col).sum(numeric_only=True)
