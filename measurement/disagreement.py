@@ -2,6 +2,8 @@ from measurement.helpers import preprocessing, tokenize_pos_tagging
 from nltk.corpus import sentiwordnet as swn
 from nltk.corpus import wordnet as wn
 import pandas as pd
+import warnings
+
 
 COL_NR_NEG_PROP = 'prop_nr_neg'
 COL_SWN_COUNT = 'swn_c'
@@ -83,7 +85,9 @@ def sentiwordnet_extract(df, orig_col_name):
 def swn_extract_score(df, col):
     df_scores = sentiwordnet_extract(df, col)
     columns = df_scores.columns.to_list()
-    df.loc[:, columns] = df_scores[columns]
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        df.loc[:, columns] = df_scores[columns]
     return df
 
 

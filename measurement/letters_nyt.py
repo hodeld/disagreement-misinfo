@@ -122,16 +122,16 @@ def analyze_files_book():
         df.to_csv(fp_csv)
 
 
-def analyze():
+def analyze_letters():
     # load data
     df = merge_pdf_tdm([COL_NR_NEG, COL_SWN_COUNT])
     dfy = get_yearly_data_book()
 
-    neg_sentiment_swn(df)
-
     col_neg = COL_NR_NEG_PROP
 
-    # exclude > 2007 because we do not have pdf data for that period
+    neg_sentiment_swn(df)
+
+    #  exclude > 2007 because we do not have pdf data for that period
     dfy = dfy[dfy.index <= 2007]
     # merge data
     dfy.index = pd.to_datetime(dfy.index, format='%Y')
@@ -157,4 +157,4 @@ def analyze():
 if __name__ == '__main__':
     # analyze_files_book()
     # analyze_files_proquest()
-    analyze()
+    analyze_letters()

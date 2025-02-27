@@ -1,13 +1,16 @@
+import shutil
+
 import pandas as pd
 import re
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from lxml import etree
 from bs4 import BeautifulSoup
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 import nltk
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, dates
 import os
 
 # Define paths
@@ -18,6 +21,14 @@ BOOK_LETTERS_PATH = os.path.join(OUTPUT_PATH, 'book_letters.csv')
 AMCT_TEXT_FILES_PATH = os.path.join(DATASETS_PATH, 'amct_text_files')
 PQ_TEXT_FILES_PATH = os.path.join(DATASETS_PATH, 'pq_text_files')
 BOOK_DATA_PATH = os.path.join(DATASETS_PATH, 'yearly_data_from_book.csv')
+
+VACCINE_MISINFO_MODEL = os.path.join(os.path.abspath('../misinfo_model/'), 'vaxx_bert_model')
+
+TWEETS_AGG_PATH = os.path.join(OUTPUT_PATH, 'tweet_disa_misinfo.csv')
+TWEETS_DATASETS_PATH = os.path.join(DATASETS_PATH, 'tweet_datasets')
+
+# Define tweet file names as list
+TWEET_FILES = ['test_data']
 
 COL_POS_TAG = 'pos_tags'
 COL_LEMMA = 'after_lemmatization'
@@ -76,6 +87,53 @@ def plot_disagreement_single_year(df, col, do_normalize=True):
     ax.set_xlabel('Year', fontsize=16)
 
     fig.tight_layout(h_pad=7.0, )
+    plt.show()
+
+
+def plot_disagreement_misinfo(df, cols, names, second_axis=1, do_normalize=False):
+    plt.rcParams.update({'font.size': 14})
+    fig, ax = plt.subplots(1, 1, figsize=(11, 8))  # x, y
+    x_vals = df.index
+    colors = list([plt.cm.tab20c(i) for i in [0, 4, 12, 16, 1, 5, 13, 17]])
+    for i, (c, n, cl) in enumerate(zip(cols, names, colors)):
+        y = df[c]
+        if second_axis and i != second_axis and do_normalize:
+            y = normalize_vals(y)
+        if second_axis and i == second_axis:
+            axi = ax.twinx()  # instantiate a second axes that shares the same x-axis
+        else:
+            axi = ax
+        axi.plot(x_vals, y, label=n, color=cl)
+
+        if second_axis == 2 and i < 2:
+            ylabel = 'Disagreement & Misinformation'
+            ax.set_ylabel(ylabel)
+        else:
+            axi.set_ylabel(f'# {n} calculated', color=cl)
+        axi.get_legend_handles_labels()
+    fig.legend(loc="upper right", bbox_to_anchor=(.9, .9), )
+
+    plt.setp(ax.get_xticklabels(), rotation=30, ha="right", rotation_mode="anchor")
+    ax.set_xlabel('Year-Month')
+    ax.xaxis.set_major_locator(dates.MonthLocator(interval=3))
+
+    topic = 'Vaccines'
+    title = f'Disagreement & Misinformation {topic}'
+    # fig.suptitle(title)  #
+    fig.tight_layout(h_pad=7.0, )  # not together with set position
+    plt.show()
+
+
+def plot_disagreement_single_month(df, col, do_normalize=True):
+    fig, ax = plot_disagreement_single(df, col, do_normalize)
+
+    ax.get_legend_handles_labels()
+
+    plt.setp(ax.get_xticklabels(), rotation=30, ha="right", rotation_mode="anchor")
+    ax.set_xlabel('Year-Month', fontsize=16)
+    ax.xaxis.set_major_locator(dates.MonthLocator(interval=3))
+
+    fig.tight_layout(h_pad=7.0, )  # do not set together with set position
     plt.show()
 
 
@@ -171,7 +229,7 @@ def getxmlcontent(fpath, strip_html=True):
     return goid, title, date, text, pubtitle
 
 
-def preprocessing(df, orig_col_name, redo=False,
+def preprocessing(df, orig_col_name, redo=True,
                   rm_spechr=REMOVE_SPECIALCHR, rm_stopwords=REMOVE_STOPWORDS,
                   ):
     # from https://www.kaggle.com/code/yommnamohamed/sentiment-analysis-using-sentiwordnet/notebook
@@ -350,3 +408,84 @@ def year_month_from_string(df, col_date='date'):
     col_m = 'year-month'
     df[col_m] = df.apply(lambda x: calc_month(x), axis=1)
     return col_year, col_m
+
+
+def get_dataset_parts(datasets, date_range):
+    """Helper function to identify data range for each Twitter dataset."""
+
+    dtf = '%Y-%m-%d %H:%M:%S'
+    date_col = 'created_at'
+    filename_d = {}
+    start_str, end_str, frequency = date_range
+    start_date = datetime.strptime(start_str + '-01 00:00:00', dtf) - relativedelta(months=1)
+    start_str = start_date.strftime(dtf)
+    end_date = datetime.strptime(end_str + '-01', '%Y-%m-%d')
+    for filename in datasets:
+        df = get_dataframe(filename)
+        df_start, df_end = df[date_col].min().replace(tzinfo=None), df[date_col].max().replace(tzinfo=None)
+        if df_start > df_end or end_date < df_start:
+            continue
+        st_str = start_str  #
+        nr_m = 0
+        while True:
+            nr_m += 1
+            st_str, et_str, do_continue = get_dates(st_str, end_date, frequency, dtf)
+            if do_continue is False:
+                break
+            dates_all = filename_d.get(filename, [])
+            dates_all.append((st_str, et_str))
+            filename_d[filename] = dates_all
+    return filename_d
+
+
+def get_dates(s_str, end_dt, freq, dtf):
+    dt1 = datetime.strptime(s_str, dtf)
+    if dt1 > end_dt:
+        return None, None, False
+    if freq == 'month':
+        rel_delta = relativedelta(months=1)
+    elif freq == 'week':
+        rel_delta = relativedelta(days=7)
+    dt1 += rel_delta
+    dt2 = dt1 + rel_delta
+    s_str = dt1.strftime(dtf)
+    e_str = dt2.strftime(dtf)
+    do_cont = True
+    return s_str, e_str, do_cont
+
+
+def get_dataframe(fn):
+    fp = get_fp(fn)
+    df = pd.read_parquet(fp)
+    return df
+
+
+def get_fp(file_name, file_type='parquet'):
+    return os.path.join(TWEETS_DATASETS_PATH, f'{file_name}.{file_type}')
+
+
+def copy_orig_files(filename_d):
+    """makes a copy of the original files"""
+    suffix = '_modified'
+    new_d = {}
+    for key, val in filename_d.items():
+        new_key = key + suffix
+        new_d[new_key] = val
+        dest = get_fp(new_key)
+        if os.path.exists(dest):
+            continue
+        print('copying', key)
+        source = get_fp(key)
+        shutil.copy(source, dest)
+    return new_d
+
+
+def transfer_results_to_main_df(dfmain, df, cols):
+    for col in cols:
+        dfmain.loc[df.index, col] = df[col]
+
+
+def save_main_df(file_name, df):
+    fp = get_fp(file_name)
+    df.to_parquet(fp)
+    print('df saved', file_name)
