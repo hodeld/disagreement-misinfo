@@ -1,4 +1,4 @@
-from measurement.helpers import preprocessing, tokenize_pos_tagging
+from helpers import preprocessing, tokenize_pos_tagging
 from nltk.corpus import sentiwordnet as swn
 from nltk.corpus import wordnet as wn
 import pandas as pd

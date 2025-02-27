@@ -28,7 +28,7 @@ TWEETS_AGG_PATH = os.path.join(OUTPUT_PATH, 'tweet_disa_misinfo.csv')
 TWEETS_DATASETS_PATH = os.path.join(DATASETS_PATH, 'tweet_datasets')
 
 # Define tweet file names as list
-TWEET_FILES = ['test_data']
+TWEET_FILES = ['filenames']
 
 COL_POS_TAG = 'pos_tags'
 COL_LEMMA = 'after_lemmatization'

@@ -1,9 +1,6 @@
 import pandas as pd
-import torch
-from scipy.special import softmax
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TextClassificationPipeline, pipeline
 
-from measurement.helpers import VACCINE_MISINFO_MODEL
 
 COL_IS_MISINFO = 'is_misinfo'
 COL_SENTI_BERT_L, COL_SENTI_BERT_S = 'bert_cf_label', 'bert_cf_score'
